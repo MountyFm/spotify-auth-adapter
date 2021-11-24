@@ -1,6 +1,6 @@
 package rest
 
-import Actors.PerRequest.PerRequestActor
+import actors.PerRequest.PerRequestActor
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.server.{Route, RouteResult}
 import domain.ApiRequest

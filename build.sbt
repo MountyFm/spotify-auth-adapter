@@ -1,6 +1,6 @@
-name := "mounty-auth-api"
+name := "spotify-auth-adapter"
 
-version := "0.1."
+version := "0.1.0"
 
 scalaVersion := "2.12.12"
 
@@ -24,6 +24,6 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-xml" % "1.1.0",
   "org.scalaj" %% "scalaj-http" % "2.4.2",
 
-  "kz.mounty"         %% "mounty-domain"    % "0.1.2-SNAPSHOT",
+  "kz.mounty"         %% "mounty-domain"    % "0.1.1",
   "org.scalaj"        %% "scalaj-http"      % "2.4.2"
 )

@@ -1,4 +1,4 @@
-package Actors
+package actors
 
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.http.scaladsl.marshalling.ToResponseMarshallable

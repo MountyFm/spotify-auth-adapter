@@ -1,6 +1,6 @@
 package rest
 
-import Actors.SpotifyServiceActor
+import actors.SpotifyServiceActor
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
