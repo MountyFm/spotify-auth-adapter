@@ -1,13 +1,13 @@
-package actors
+package kz.mounty.spotify.auth.adapter.actors
 
 import akka.actor.{ActorSystem, Props}
 import akka.util.Timeout
 import com.typesafe.config.Config
-import util.{HttpClient, LoggerActor, SpotifyUrlGetter}
+import kz.mounty.spotify.auth.adapter.util.{HttpClient, LoggerActor, SpotifyUrlGetter}
 
 import java.net.URLEncoder
 import scala.concurrent.ExecutionContext
-import domain._
+import kz.mounty.spotify.auth.adapter.domain._
 import kz.mounty.fm.exceptions.{ErrorCodes, ServerErrorRequestException}
 
 import scala.util.control.NonFatal
@@ -100,7 +100,7 @@ class SpotifyServiceActor(implicit timeout: Timeout,
         case NonFatal(e) =>
           val exception = ServerErrorRequestException(
             ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
-            Some(s"Received exception while generating access token: ${e.getMessage}")
+            Some(s"Received exception while refreshing access token: ${e.getMessage}")
           )
           context.parent ! exception
       }

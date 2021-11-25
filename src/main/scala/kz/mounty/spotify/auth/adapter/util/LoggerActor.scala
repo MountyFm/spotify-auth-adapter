@@ -1,4 +1,4 @@
-package util
+package kz.mounty.spotify.auth.adapter.util
 
 import akka.actor.{Actor, ActorLogging}
 

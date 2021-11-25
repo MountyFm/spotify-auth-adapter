@@ -1,14 +1,14 @@
-package actors
+package kz.mounty.spotify.auth.adapter.actors
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.Props
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server.{RequestContext, RouteResult}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
-import domain.{ApiRequest, ApiResponse}
+import kz.mounty.spotify.auth.adapter.domain.{ApiRequest, ApiResponse}
 import kz.mounty.fm.exceptions.{ErrorCodes, MountyException, ServerErrorRequestException}
 import org.json4s.jackson.Serialization
 import org.json4s.{DefaultFormats, Formats, Serialization}
-import util.{LoggerActor, MountyEndpoint}
+import kz.mounty.spotify.auth.adapter.util.{LoggerActor, MountyEndpoint}
 
 import scala.concurrent.{ExecutionContext, Promise}
 

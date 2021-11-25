@@ -1,6 +1,6 @@
-package rest
+package kz.mounty.spotify.auth.adapter.rest
 
-import actors.SpotifyServiceActor
+import kz.mounty.spotify.auth.adapter.actors.SpotifyServiceActor
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.server.Directives.{entity, _}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
-import domain.{GenerateAccessTokenRequest, GenerateSpotifyAuthUrlRequest, RefreshAccessTokenRequest}
+import kz.mounty.spotify.auth.adapter.domain.{GenerateAccessTokenRequest, GenerateSpotifyAuthUrlRequest, RefreshAccessTokenRequest}
 import org.json4s.jackson.Serialization
 import org.json4s.{DefaultFormats, Formats, Serialization}
 

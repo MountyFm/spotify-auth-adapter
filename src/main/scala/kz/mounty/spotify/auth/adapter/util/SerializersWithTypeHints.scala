@@ -1,6 +1,6 @@
-package util
+package kz.mounty.spotify.auth.adapter.util
 
-import domain.{AccessTokenResponse, GenerateAccessTokenRequest, GenerateSpotifyAuthUrlRequest, GenerateSpotifyAuthUrlResponse, RefreshAccessTokenRequest}
+import kz.mounty.spotify.auth.adapter.domain._
 import kz.mounty.fm.exceptions.ExceptionInfo
 import org.json4s.ShortTypeHints
 import org.json4s.jackson.Serialization

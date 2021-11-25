@@ -1,4 +1,4 @@
-package util
+package kz.mounty.spotify.auth.adapter.util
 
 import com.typesafe.config.Config
 

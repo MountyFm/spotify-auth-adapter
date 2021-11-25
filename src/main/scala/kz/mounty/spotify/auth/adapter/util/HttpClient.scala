@@ -1,4 +1,4 @@
-package util
+package kz.mounty.spotify.auth.adapter.util
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.{Authorization, `Content-Type`}

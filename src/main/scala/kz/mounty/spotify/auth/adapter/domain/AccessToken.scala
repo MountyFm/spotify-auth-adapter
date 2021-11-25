@@ -1,4 +1,4 @@
-package domain
+package kz.mounty.spotify.auth.adapter.domain
 
 case class GenerateAccessTokenRequest(authToken: String,
                                       redirectUri: String) extends ApiRequest

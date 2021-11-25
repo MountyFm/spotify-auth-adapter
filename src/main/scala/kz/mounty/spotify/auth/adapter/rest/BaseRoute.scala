@@ -1,9 +1,9 @@
-package rest
+package kz.mounty.spotify.auth.adapter.rest
 
-import actors.PerRequest.PerRequestActor
+import kz.mounty.spotify.auth.adapter.actors.PerRequest.PerRequestActor
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.server.{Route, RouteResult}
-import domain.ApiRequest
+import kz.mounty.spotify.auth.adapter.domain.ApiRequest
 
 import scala.concurrent.Promise
 
