@@ -8,7 +8,7 @@ import domain.{ApiRequest, ApiResponse}
 import kz.mounty.fm.exceptions.{ErrorCodes, MountyException, ServerErrorRequestException}
 import org.json4s.jackson.Serialization
 import org.json4s.{DefaultFormats, Formats, Serialization}
-import util.MountyEndpoint
+import util.{LoggerActor, MountyEndpoint}
 
 import scala.concurrent.{ExecutionContext, Promise}
 
@@ -21,7 +21,7 @@ object PerRequest {
 
 }
 
-trait PerRequest extends Actor with ActorLogging with Json4sSupport with MountyEndpoint {
+trait PerRequest extends LoggerActor with Json4sSupport with MountyEndpoint {
   implicit val formats: Formats = DefaultFormats
   implicit val serialization: Serialization = Serialization
   implicit val ex: ExecutionContext = context.dispatcher
@@ -35,14 +35,17 @@ trait PerRequest extends Actor with ActorLogging with Json4sSupport with MountyE
 
   override def receive: Receive = {
     case response: ApiResponse =>
+      writeInfoLog("Received response", response)
       handleAndCompleteResponse(response)
     case e: MountyException =>
+      writeErrorLog("Received error", e)
       handleAndCompleteErrorResponse(e)
     case any =>
       val exception = ServerErrorRequestException(
         ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
         Some(s"Received unhandled response: ${any}")
       )
+      writeErrorLog("Received error", exception)
       handleAndCompleteErrorResponse(exception)
   }
 

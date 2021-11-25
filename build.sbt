@@ -5,7 +5,7 @@ version := "0.1.0"
 scalaVersion := "2.12.12"
 
 val sVersion = "2.12.12"
-val akkaVersion = "2.6.7"
+val akkaVersion = "2.6.17"
 val jsonVersion = "3.6.9"
 val xtractVersion = "2.0.0"
 
@@ -22,7 +22,6 @@ libraryDependencies ++= Seq(
   "com.lucidchart" %% "xtract-testing" % xtractVersion % "test",
   "com.typesafe.play" %% "play-json" % "2.8.1",
   "org.scala-lang.modules" %% "scala-xml" % "1.1.0",
-  "org.scalaj" %% "scalaj-http" % "2.4.2",
 
   "kz.mounty"         %% "mounty-domain"    % "0.1.1",
   "org.scalaj"        %% "scalaj-http"      % "2.4.2"

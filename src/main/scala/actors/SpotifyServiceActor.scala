@@ -1,9 +1,9 @@
 package actors
 
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{ActorSystem, Props}
 import akka.util.Timeout
 import com.typesafe.config.Config
-import util.{HttpClient, SpotifyUrlGetter}
+import util.{HttpClient, LoggerActor, SpotifyUrlGetter}
 
 import java.net.URLEncoder
 import scala.concurrent.ExecutionContext
@@ -26,21 +26,28 @@ object SpotifyServiceActor {
 
   sealed trait Command[T] extends Message[T]
 
-  case class GenerateSpotifyAuthUrl(body: GenerateSpotifyAuthUrlRequest) extends Command[GenerateSpotifyAuthUrlRequest]
+  case class GenerateSpotifyAuthUrl(body: GenerateSpotifyAuthUrlRequest) extends Command[GenerateSpotifyAuthUrlRequest] {
+    val description = "Generating spotify auth url"
+  }
 
-  case class GenerateAccessToken(body: GenerateAccessTokenRequest) extends Command[GenerateAccessTokenRequest]
+  case class GenerateAccessToken(body: GenerateAccessTokenRequest) extends Command[GenerateAccessTokenRequest] {
+    val description = "Generating Spotify API access token"
+  }
 
-  case class RefreshAccessToken(body: RefreshAccessTokenRequest) extends Command[RefreshAccessTokenRequest]
+  case class RefreshAccessToken(body: RefreshAccessTokenRequest) extends Command[RefreshAccessTokenRequest] {
+    val description = "Refreshing Spotify API access token"
+  }
 
 }
 
 class SpotifyServiceActor(implicit timeout: Timeout,
                           override val config: Config,
                           system: ActorSystem,
-                          executionContext: ExecutionContext) extends Actor with HttpClient with SpotifyUrlGetter {
+                          executionContext: ExecutionContext) extends LoggerActor with HttpClient with SpotifyUrlGetter {
 
   override def receive: Receive = {
     case command: SpotifyServiceActor.GenerateSpotifyAuthUrl =>
+      writeInfoLog(command.description, command.body)
       val encodedRedirectUri = URLEncoder.encode(command.body.redirectUri, "UTF-8")
 
       val url = getSpotifyAuthUrl(
@@ -48,12 +55,12 @@ class SpotifyServiceActor(implicit timeout: Timeout,
         encodedRedirectUri,
         command.body.scope
       )
-
       context.parent ! GenerateSpotifyAuthUrlResponse(url = url)
 
     case command: SpotifyServiceActor.GenerateAccessToken =>
-      val encodedRedirectUri = URLEncoder.encode(command.body.redirectUri, "UTF-8")
+      writeInfoLog(command.description, command.body)
 
+      val encodedRedirectUri = URLEncoder.encode(command.body.redirectUri, "UTF-8")
       val url = getSpotifyAccessTokenUrl(
         encodedRedirectUri = encodedRedirectUri,
         authToken = command.body.authToken,
@@ -76,11 +83,12 @@ class SpotifyServiceActor(implicit timeout: Timeout,
       }
 
     case command: SpotifyServiceActor.RefreshAccessToken =>
+      writeInfoLog(command.description, command.body)
+
       val url = getSpotifyRefreshedTokenUrl(
         grantType = config.getString("spotify.refresh-grant-type"),
         refreshToken = command.body.refreshToken
       )
-
       makePostRequest[AccessTokenResponse](
         uri = url,
         headers = getAuthorizationHeaders,
