@@ -9,4 +9,4 @@ case class AccessTokenResponse(accessToken: String,
                                tokenType: String,
                                expiresIn: Int,
                                refreshToken: Option[String],
-                               scope: String) extends ApiResponse
+                               scope: String)

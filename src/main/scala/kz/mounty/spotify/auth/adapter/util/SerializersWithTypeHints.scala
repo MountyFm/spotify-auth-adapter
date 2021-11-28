@@ -16,7 +16,8 @@ trait SerializersWithTypeHints {
           classOf[AccessTokenResponse],
           classOf[GenerateSpotifyAuthUrlRequest],
           classOf[GenerateSpotifyAuthUrlResponse],
-          classOf[ExceptionInfo]
+          classOf[ExceptionInfo],
+          classOf[SpotifyUserProfile],
         )
       )
     )

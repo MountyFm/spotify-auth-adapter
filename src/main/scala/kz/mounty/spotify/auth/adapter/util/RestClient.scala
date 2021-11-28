@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.{Authorization, `Content-Type`}
 import akka.http.scaladsl.model.{headers, _}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.{ConnectionContext, Http}
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
@@ -23,10 +23,6 @@ trait RestClient extends SerializersWithTypeHints with MountyEndpoint {
                                   (implicit system: ActorSystem,
                                    ec: ExecutionContext,
                                    mat: Materializer): Future[T] = {
-
-    val badSSLConfig = AkkaSSLConfig().mapSettings(s => s.withLoose(s.loose.withDisableHostnameVerification(true)))
-    val noCertificateCheckContext = ConnectionContext.https(trustfulSslContext, Some(badSSLConfig))
-
     val p = Promise[T]
 
     Http()
@@ -41,25 +37,27 @@ trait RestClient extends SerializersWithTypeHints with MountyEndpoint {
           ),
           protocol = HttpProtocols.`HTTP/1.1`
         ),
-        noCertificateCheckContext
-      ).flatMap { httpResponse: HttpResponse =>
-      httpResponse.status match {
-        case StatusCodes.OK =>
-          if (httpResponse.entity.contentType == ContentTypes.`application/json`) {
-            Unmarshal(httpResponse.entity).to[String].map { jsonString =>
-              p.success(parse(jsonString).camelizeKeys.extract[T])
-            }
-          }
-        case _ =>
-          p.failure(
-            ServerErrorRequestException(
-              ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
-              Some(s"Http error response: ${httpResponse.status}")
-            )
-          )
-      }
-      p.future
-    }
+        getNoCertificateCheckContext
+      ).flatMap(httpResponse => handleHttpResponse(p, httpResponse))
+  }
+
+  def makeGetRequest[T: Manifest](uri: String,
+                                  headers: List[HttpHeader])
+                                 (implicit system: ActorSystem,
+                                  ec: ExecutionContext,
+                                  mat: Materializer): Future[T] = {
+    val p = Promise[T]
+
+    Http()
+      .singleRequest(
+        request = HttpRequest(
+          uri = uri,
+          method = HttpMethods.GET,
+          headers = headers,
+          protocol = HttpProtocols.`HTTP/1.1`
+        ),
+        getNoCertificateCheckContext
+      ).flatMap(httpResponse => handleHttpResponse(p, httpResponse))
   }
 
   private val trustfulSslContext: SSLContext = {
@@ -85,5 +83,40 @@ trait RestClient extends SerializersWithTypeHints with MountyEndpoint {
       `Content-Type`(ContentTypes.`application/x-www-form-urlencoded`),
       Authorization(headers.BasicHttpCredentials(s"${encoded}")),
     )
+  }
+
+  def getNoCertificateCheckContext(implicit ec: ExecutionContext,
+                                   system: ActorSystem,
+                                   mat: Materializer): HttpsConnectionContext = {
+    val badSSLConfig = AkkaSSLConfig().mapSettings(s => s.withLoose(s.loose.withDisableHostnameVerification(true)))
+    ConnectionContext.https(trustfulSslContext, Some(badSSLConfig))
+  }
+
+  def handleHttpResponse[T: Manifest](p: Promise[T], httpResponse: HttpResponse)
+                                     (implicit mat: Materializer, ex: ExecutionContext): Future[T] = {
+    httpResponse.status match {
+      case StatusCodes.OK =>
+        if (httpResponse.entity.contentType == ContentTypes.`application/json`) {
+          Unmarshal(httpResponse.entity).to[String].map { jsonString =>
+            p.success(parse(jsonString).camelizeKeys.extract[T])
+          } recover {
+            case e: Throwable =>
+              p.failure(
+                ServerErrorRequestException(
+                  ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
+                  Some(s"Parse error: $e")
+                )
+              )
+          }
+        }
+      case e =>
+        p.failure(
+          ServerErrorRequestException(
+            ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
+            Some(s"Http error response: ${httpResponse.status}, $e")
+          )
+        )
+    }
+    p.future
   }
 }

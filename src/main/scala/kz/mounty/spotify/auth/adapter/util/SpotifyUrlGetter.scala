@@ -8,6 +8,8 @@ trait SpotifyUrlGetter {
 
   private val spotifyBaseUrl = config.getString("spotify.base-url")
 
+  private val spotifyApiBaseUrl = config.getString("spotify.api-base-url")
+
   protected def getSpotifyAuthUrl(clientId: String,
                                   encodedRedirectUri: String,
                                   scope: String): String =
@@ -22,4 +24,6 @@ trait SpotifyUrlGetter {
                                             refreshToken: String): String =
 
     s"${spotifyBaseUrl}/api/token?grant_type=$grantType&refresh_token=$refreshToken"
+
+  protected def getSpotifyUserProfileUrl: String = s"$spotifyApiBaseUrl/me"
 }

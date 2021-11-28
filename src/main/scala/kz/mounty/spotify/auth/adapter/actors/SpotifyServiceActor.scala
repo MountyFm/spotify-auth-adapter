@@ -1,17 +1,17 @@
 package kz.mounty.spotify.auth.adapter.actors
 
 import akka.actor.{ActorSystem, Props}
+import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.util.Timeout
 import com.typesafe.config.Config
-import kz.mounty.spotify.auth.adapter.util.{DTOConverter, RestClient, LoggerActor, SpotifyUrlGetter}
+import kz.mounty.spotify.auth.adapter.util.{DTOConverter, LoggerActor, RestClient, SpotifyUrlGetter}
 
 import java.net.URLEncoder
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import kz.mounty.spotify.auth.adapter.domain._
 import kz.mounty.fm.exceptions.{ErrorCodes, ServerErrorRequestException}
 import scredis.Redis
 
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
@@ -80,7 +80,16 @@ class SpotifyServiceActor(redis: Redis)(implicit timeout: Timeout,
         body = ""
       ).map {
         case res: AccessTokenResponse =>
-          putAccessTokenToRedisAndSendResponse(res)
+          getSpotifyUserProfile(accessToken = res.accessToken).onComplete {
+            case Success(spotifyUserProfile) =>
+              putAccessTokenToRedisAndSendResponse(spotifyUserProfile.id, res)
+            case Failure(e) =>
+              val exception = ServerErrorRequestException(
+                ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
+                Some(s"Received exception while getting spotify user profile: ${e.getMessage}")
+              )
+              context.parent ! exception
+          }
         case any =>
           val exception = ServerErrorRequestException(
             ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
@@ -109,7 +118,16 @@ class SpotifyServiceActor(redis: Redis)(implicit timeout: Timeout,
         body = ""
       ).map {
         case res: AccessTokenResponse =>
-          putAccessTokenToRedisAndSendResponse(res)
+          getSpotifyUserProfile(accessToken = res.accessToken).onComplete {
+            case Success(spotifyUserProfile) =>
+              putAccessTokenToRedisAndSendResponse(spotifyUserProfile.id, res)
+            case Failure(e) =>
+              val exception = ServerErrorRequestException(
+                ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
+                Some(s"Received exception while getting spotify user profile: ${e.getMessage}")
+              )
+              context.parent ! exception
+          }
         case any =>
           val exception = ServerErrorRequestException(
             ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
@@ -119,11 +137,10 @@ class SpotifyServiceActor(redis: Redis)(implicit timeout: Timeout,
       }
   }
 
-  def putAccessTokenToRedisAndSendResponse(res: AccessTokenResponse): Unit = {
-    val tokenKey = UUID.randomUUID().toString
-    redis.set(tokenKey, res.accessToken, Some(FiniteDuration(res.expiresIn, TimeUnit.SECONDS))).onComplete {
+  def putAccessTokenToRedisAndSendResponse(key: String, res: AccessTokenResponse): Unit = {
+    redis.set(key, res.accessToken, Some(FiniteDuration(res.expiresIn, TimeUnit.SECONDS))).onComplete {
       case Success(isWritten) if (isWritten) =>
-        context.parent ! convert(res, tokenKey)
+        context.parent ! convert(res, key)
       case Success(isWritten) if (!isWritten) =>
         val exception = ServerErrorRequestException(
           ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
@@ -133,5 +150,11 @@ class SpotifyServiceActor(redis: Redis)(implicit timeout: Timeout,
       case Failure(exception) =>
         context.parent ! exception
     }
+  }
+
+  def getSpotifyUserProfile(accessToken: String): Future[SpotifyUserProfile] = {
+    makeGetRequest[SpotifyUserProfile](
+      uri = getSpotifyUserProfileUrl,
+      headers = List(Authorization(OAuth2BearerToken(s"${accessToken}"))))
   }
 }
