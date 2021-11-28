@@ -80,19 +80,7 @@ class SpotifyServiceActor(redis: Redis)(implicit timeout: Timeout,
         body = ""
       ).map {
         case res: AccessTokenResponse =>
-          val tokenKey = UUID.randomUUID().toString
-          redis.set(tokenKey, res.accessToken, Some(FiniteDuration(res.expiresIn, TimeUnit.SECONDS))).onComplete {
-            case Success(isWritten) if (isWritten) =>
-              context.parent ! convert(res, tokenKey)
-            case Success(isWritten) if (!isWritten) =>
-              val exception = ServerErrorRequestException(
-                ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
-                Some(s"access token was not written to redis")
-              )
-              context.parent ! exception
-            case Failure(exception) =>
-              context.parent ! exception
-          }
+          putAccessTokenToRedisAndSendResponse(res)
         case any =>
           val exception = ServerErrorRequestException(
             ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
@@ -120,15 +108,30 @@ class SpotifyServiceActor(redis: Redis)(implicit timeout: Timeout,
         headers = getAuthorizationHeaders,
         body = ""
       ).map {
-        res =>
-          context.parent ! res
-      } recover {
-        case NonFatal(e) =>
+        case res: AccessTokenResponse =>
+          putAccessTokenToRedisAndSendResponse(res)
+        case any =>
           val exception = ServerErrorRequestException(
             ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
-            Some(s"Received exception while refreshing access token: ${e.getMessage}")
+            Some(s"Received unhandled response while generating token: $any")
           )
           context.parent ! exception
       }
+  }
+
+  def putAccessTokenToRedisAndSendResponse(res: AccessTokenResponse): Unit = {
+    val tokenKey = UUID.randomUUID().toString
+    redis.set(tokenKey, res.accessToken, Some(FiniteDuration(res.expiresIn, TimeUnit.SECONDS))).onComplete {
+      case Success(isWritten) if (isWritten) =>
+        context.parent ! convert(res, tokenKey)
+      case Success(isWritten) if (!isWritten) =>
+        val exception = ServerErrorRequestException(
+          ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
+          Some(s"access token was not written to redis")
+        )
+        context.parent ! exception
+      case Failure(exception) =>
+        context.parent ! exception
+    }
   }
 }
