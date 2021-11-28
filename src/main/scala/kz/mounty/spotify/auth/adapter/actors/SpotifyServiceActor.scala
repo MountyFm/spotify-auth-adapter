@@ -3,20 +3,25 @@ package kz.mounty.spotify.auth.adapter.actors
 import akka.actor.{ActorSystem, Props}
 import akka.util.Timeout
 import com.typesafe.config.Config
-import kz.mounty.spotify.auth.adapter.util.{HttpClient, LoggerActor, SpotifyUrlGetter}
+import kz.mounty.spotify.auth.adapter.util.{DTOConverter, RestClient, LoggerActor, SpotifyUrlGetter}
 
 import java.net.URLEncoder
 import scala.concurrent.ExecutionContext
 import kz.mounty.spotify.auth.adapter.domain._
 import kz.mounty.fm.exceptions.{ErrorCodes, ServerErrorRequestException}
+import scredis.Redis
 
+import java.util.UUID
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 object SpotifyServiceActor {
-  def props(implicit timeout: Timeout,
-            config: Config,
-            system: ActorSystem,
-            executionContext: ExecutionContext): Props = Props(new SpotifyServiceActor())
+  def props(redis: Redis)(implicit timeout: Timeout,
+                          config: Config,
+                          system: ActorSystem,
+                          executionContext: ExecutionContext): Props = Props(new SpotifyServiceActor(redis))
 
   trait Message[T] extends ApiRequest {
     val body: T
@@ -40,10 +45,13 @@ object SpotifyServiceActor {
 
 }
 
-class SpotifyServiceActor(implicit timeout: Timeout,
-                          override val config: Config,
-                          system: ActorSystem,
-                          executionContext: ExecutionContext) extends LoggerActor with HttpClient with SpotifyUrlGetter {
+class SpotifyServiceActor(redis: Redis)(implicit timeout: Timeout,
+                                        override val config: Config,
+                                        system: ActorSystem,
+                                        executionContext: ExecutionContext) extends LoggerActor
+  with RestClient
+  with SpotifyUrlGetter
+  with DTOConverter {
 
   override def receive: Receive = {
     case command: SpotifyServiceActor.GenerateSpotifyAuthUrl =>
@@ -71,8 +79,26 @@ class SpotifyServiceActor(implicit timeout: Timeout,
         headers = getAuthorizationHeaders,
         body = ""
       ).map {
-        res =>
-          context.parent ! res
+        case res: AccessTokenResponse =>
+          val tokenKey = UUID.randomUUID().toString
+          redis.set(tokenKey, res.accessToken, Some(FiniteDuration(res.expiresIn, TimeUnit.SECONDS))).onComplete {
+            case Success(isWritten) if (isWritten) =>
+              context.parent ! convert(res, tokenKey)
+            case Success(isWritten) if (!isWritten) =>
+              val exception = ServerErrorRequestException(
+                ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
+                Some(s"access token was not written to redis")
+              )
+              context.parent ! exception
+            case Failure(exception) =>
+              context.parent ! exception
+          }
+        case any =>
+          val exception = ServerErrorRequestException(
+            ErrorCodes.INTERNAL_SERVER_ERROR(errorSeries),
+            Some(s"Received unhandled response while generating token: $any")
+          )
+          context.parent ! exception
       } recover {
         case NonFatal(e) =>
           val exception = ServerErrorRequestException(

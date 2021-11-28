@@ -7,6 +7,6 @@ case class RefreshAccessTokenRequest(refreshToken: String) extends ApiRequest
 
 case class AccessTokenResponse(accessToken: String,
                                tokenType: String,
-                               expiresIn: String,
+                               expiresIn: Int,
                                refreshToken: Option[String],
                                scope: String) extends ApiResponse

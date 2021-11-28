@@ -12,13 +12,14 @@ import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import kz.mounty.spotify.auth.adapter.domain.{GenerateAccessTokenRequest, GenerateSpotifyAuthUrlRequest, RefreshAccessTokenRequest}
 import org.json4s.jackson.Serialization
 import org.json4s.{DefaultFormats, Formats, Serialization}
+import scredis.Redis
 
-class RestRouting()(implicit val timeout: Timeout,
-                    config: Config,
-                    system: ActorSystem,
-                    ex: ExecutionContext) extends BaseRoute with Json4sSupport {
+class RestRouting(redis: Redis)(implicit val timeout: Timeout,
+                                config: Config,
+                                system: ActorSystem,
+                                ex: ExecutionContext) extends BaseRoute with Json4sSupport {
 
-  val spotifyServiceActorProps: Props = SpotifyServiceActor.props
+  val spotifyServiceActorProps: Props = SpotifyServiceActor.props(redis)
 
   implicit val formats: Formats = DefaultFormats
   implicit val serialization: Serialization = Serialization

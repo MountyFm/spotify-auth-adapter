@@ -16,7 +16,7 @@ import java.security.cert.X509Certificate
 import javax.net.ssl.{KeyManager, SSLContext, X509TrustManager}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-trait HttpClient extends SerializersWithTypeHints with MountyEndpoint {
+trait RestClient extends SerializersWithTypeHints with MountyEndpoint {
   def makePostRequest[T: Manifest](uri: String,
                                    headers: List[HttpHeader],
                                    body: String)

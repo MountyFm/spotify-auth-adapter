@@ -7,6 +7,7 @@ import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory}
 import kz.mounty.spotify.auth.adapter.rest.RestRouting
 import kz.mounty.spotify.auth.adapter.util.{MountyEndpoint, SerializersWithTypeHints}
+import scredis.Redis
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
@@ -21,7 +22,9 @@ object Boot extends App with SerializersWithTypeHints with MountyEndpoint {
   val host = config.getString("application.host")
   val port = config.getInt("application.port")
 
-  val restRouting = new RestRouting()
+  val redis: Redis = Redis(config.getConfig("redis"))
+
+  val restRouting = new RestRouting(redis)
 
   Http().bindAndHandle(restRouting.authRoute, host, port)
 

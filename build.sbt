@@ -22,7 +22,7 @@ libraryDependencies ++= Seq(
   "com.lucidchart" %% "xtract-testing" % xtractVersion % "test",
   "com.typesafe.play" %% "play-json" % "2.8.1",
   "org.scala-lang.modules" %% "scala-xml" % "1.1.0",
-
+  "com.github.scredis" %% "scredis" % "2.3.4",
   "kz.mounty"         %% "mounty-domain"    % "0.1.1",
   "org.scalaj"        %% "scalaj-http"      % "2.4.2"
 )

@@ -6,8 +6,9 @@ import akka.http.scaladsl.server.{RequestContext, RouteResult}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
 import kz.mounty.spotify.auth.adapter.domain.{ApiRequest, ApiResponse}
 import kz.mounty.fm.exceptions.{ErrorCodes, MountyException, ServerErrorRequestException}
+import kz.mounty.fm.serializers.Serializers
 import org.json4s.jackson.Serialization
-import org.json4s.{DefaultFormats, Formats, Serialization}
+import org.json4s.Serialization
 import kz.mounty.spotify.auth.adapter.util.{LoggerActor, MountyEndpoint}
 
 import scala.concurrent.{ExecutionContext, Promise}
@@ -21,8 +22,7 @@ object PerRequest {
 
 }
 
-trait PerRequest extends LoggerActor with Json4sSupport with MountyEndpoint {
-  implicit val formats: Formats = DefaultFormats
+trait PerRequest extends LoggerActor with Json4sSupport with MountyEndpoint with Serializers {
   implicit val serialization: Serialization = Serialization
   implicit val ex: ExecutionContext = context.dispatcher
 
