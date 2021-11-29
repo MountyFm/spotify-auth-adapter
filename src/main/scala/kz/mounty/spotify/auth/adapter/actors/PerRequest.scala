@@ -58,8 +58,7 @@ trait PerRequest extends LoggerActor with Json4sSupport with MountyEndpoint with
   }
 
   def handleAndCompleteErrorResponse(error: MountyException): Unit = {
-    val exceptionInfo = error.getExceptionInfo
-    handleAndCompleteResponse(exceptionInfo)
+    handleAndCompleteResponse(error)
   }
 
   override def postStop(): Unit =
