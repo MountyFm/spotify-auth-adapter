@@ -9,7 +9,7 @@ trait DTOConverter {
     AccessTokenResponseDTO(
       tokenKey = tokenKey,
       refreshToken = accessTokenResponse.refreshToken,
-      expiresIn = DateTime.now.plusSeconds(accessTokenResponse.expiresIn)
+      expiresAfterDate = DateTime.now.plusSeconds(accessTokenResponse.expiresIn)
     )
   }
 }
