@@ -13,6 +13,7 @@ import kz.mounty.spotify.auth.adapter.domain.{GenerateAccessTokenRequest, Genera
 import org.json4s.jackson.Serialization
 import org.json4s.{DefaultFormats, Formats, Serialization}
 import scredis.Redis
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 
 class RestRouting(redis: Redis)(implicit val timeout: Timeout,
                                 config: Config,
@@ -24,11 +25,13 @@ class RestRouting(redis: Redis)(implicit val timeout: Timeout,
   implicit val formats: Formats = DefaultFormats
   implicit val serialization: Serialization = Serialization
 
-  val authRoute: Route = pathPrefix("spotify-auth-adapter") {
-    concat(
-      authGetRoute,
-      authPostRoute
-    )
+  val authRoute: Route = cors() {
+    pathPrefix("spotify-auth-adapter") {
+      concat(
+        authGetRoute,
+        authPostRoute
+      )
+    }
   }
 
   private def authGetRoute: Route =
