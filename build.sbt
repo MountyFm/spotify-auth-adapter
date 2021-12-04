@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "de.heikoseeberger" %% "akka-http-json4s" % "1.31.0",
-  "com.typesafe.akka" %% "akka-http" % "10.1.12",
+  "com.typesafe.akka" %% "akka-http" % "10.1.15",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.json4s" %% "json4s-native" % jsonVersion,
   "org.json4s" %% "json4s-jackson" % jsonVersion,
@@ -23,7 +23,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.8.1",
   "org.scala-lang.modules" %% "scala-xml" % "1.1.0",
   "com.github.scredis" %% "scredis" % "2.3.4",
-  "kz.mounty"         %% "mounty-domain"    % "0.1.1",
+  "kz.mounty"         %% "mounty-domain"    % "0.1.1-SNAPSHOT",
   "org.scalaj"        %% "scalaj-http"      % "2.4.2",
   "ch.megard" %% "akka-http-cors" % "1.1.2"
 )
